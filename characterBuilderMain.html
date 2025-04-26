@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nightfall RP Character Builder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      margin: 20px;
+    }
+    h1, h2 {
+      color: #f0f0f0;
+    }
+    select, input[type="checkbox"] {
+      margin-top: 5px;
+      background-color: #2e2e2e;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 5px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    .traits-section {
+      margin-top: 20px;
+    }
+    .traits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background-color: #2b2b2b;
+    }
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid #444;
+      text-align: left;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    th {
+      background-color: #3a3a3a;
+    }
+    #pointsDisplay {
+      font-size: 1.3em;
+      margin-top: 10px;
+      font-weight: bold;
+      color: #ffcc00;
+    }
+    /* Skill type color coding */
+    .combat {
+      background-color: #5a2d2d;
+    }
+    .agility {
+      background-color: #2d5a3a;
+    }
+    .crafting {
+      background-color: #2d495a;
+    }
+    .survival {
+      background-color: #5a4a2d;
+    }
+    .firearms {
+      background-color: #5a2d4a;
+    }
+    .boosted td {
+      font-weight: bold;
+      color: #00ff99;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>NFPZ Character Builder</h1>
+
+  <div>
+    <label for="professionSelect"><strong>Profession:</strong></label><br>
+    <select id="professionSelect"></select>
+  </div>
+
+  <div id="pointsDisplay">Points Remaining: 12</div>
+
+  <div class="traits-section">
+    <h2>Positive Traits</h2>
+    <div class="traits-grid" id="positiveTraits"></div>
+  </div>
+
+  <div class="traits-section">
+    <h2>Negative Traits</h2>
+    <div class="traits-grid" id="negativeTraits"></div>
+  </div>
+
+  <h2>Skills Overview</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Skill</th>
+        <th>Level</th>
+        <th>XP Multiplier</th>
+      </tr>
+    </thead>
+    <tbody id="skillsTable"></tbody>
+  </table>
+
+  <script>
+    const baseSkills = {
+      "Short Blunt": 0, "Long Blunt": 0, "Short Blade": 0, "Long Blade": 0, "Spear": 0,
+      "Aiming": 0, "Reloading": 0, "Gunsmithing": 0,
+      "Sneaking": 0, "Nimble": 0, "Lightfooted": 0, "Sprinting": 0,
+      "Foraging": 0, "Trapping": 0, "Fishing": 0, "Farming": 0, "Cultivation": 0, "Wine Making": 0, "Brewing": 0,
+      "Carpentry": 0, "Metalworking": 0, "Mechanics": 0, "Electrical": 0, "First Aid": 0, "Tailoring": 0, "Cooking": 0, "Maintenance": 0,
+      "Strength": 5, "Fitness": 5
+    };
+
+    const professions = {
+      "Fire officer": { cost: -8, skills: { "Axe": 2, "Sprinting": 1, "Strength": 1, "Fitness": 1 } },
+      "Police officer": { cost: -8, skills: { "Aiming": 2, "Reloading": 1, "Short Blunt": 1 } },
+      "Park ranger": { cost: -7, skills: { "Axe": 1, "Foraging": 3, "Maintenance": 1 } },
+      "Construction worker": { cost: -8, skills: { "Carpentry": 1, "Maintenance": 2, "Short Blunt": 3 } },
+      "Security guard": { cost: -5, skills: { "Lightfooted": 1, "Short Blunt": 1, "Sprinting": 2 } },
+      "Carpenter": { cost: -8, skills: { "Carpentry": 8, "Short Blunt": 1 } },
+      "Burglar": { cost: -6, skills: { "Nimble": 2, "Sneaking": 2, "Lightfooted": 2, "Long Blunt": 1 } },
+      "Chef": { cost: -4, skills: { "Cooking": 8, "Maintenance": 1, "Short Blade": 1 } },
+      "Repairman": { cost: -8, skills: { "Carpentry": 1, "Maintenance": 2, "Metalworking": 1, "Short Blunt": 1 } },
+      "Farmer": { cost: -6, skills: { "Farming": 8, "Strength": 2 } },
+      "Fisherman": { cost: -6, skills: { "Fishing": 6, "Spear": 2 } },
+      "Doctor": { cost: -6, skills: { "First Aid": 8, "Short Blade": 1 } },
+      "Veteran": { cost: -12, skills: { "Aiming": 3, "Gunsmithing": 1, "Reloading": 2 } },
+      "Nurse": { cost: -6, skills: { "First Aid": 2, "Lightfooted": 1, "Nimble": 2 } },
+      "Lumberjack": { cost: -8, skills: { "Axe": 3, "Strength": 2 } },
+      "Fitness instructor": { cost: -8, skills: { "Fitness": 3, "Nimble": 1, "Sprinting": 2 } },
+      "Burger flipper": { cost: -4, skills: { "Cooking": 2, "Maintenance": 1, "Short Blade": 1 } },
+      "Electrician": { cost: -6, skills: { "Electrical": 8, "Maintenance": 1 } },
+      "Engineer": { cost: -6, skills: { "Electrical": 1, "Carpentry": 1, "Long Blunt": 1 } },
+      "Metalworker": { cost: -8, skills: { "Maintenance": 1, "Metalworking": 8 } },
+      "Mechanic": { cost: -8, skills: { "Maintenance": 1, "Mechanics": 8, "Short Blunt": 1 } },
+      "Tailor": { cost: -6, skills: { "Nimble": 1, "Tailoring": 8 } },
+      "Gunsmith": { cost: -8, skills: { "Gunsmithing": 7, "Maintenance": 1 } },
+      "Unemployed": { cost: 0, skills: {} }
+    };
+
+    const positiveTraits = [
+      { name: "+1 Short Blunt", cost: -1, skills: { "Short Blunt": 1 } },
+	  { name: "Jukebox hero", cost: -1, skills: {} },
+	  { name: "Speed demon", cost: -1, skills: {} },
+	  { name: "Amateur Cooking", cost: -2, skills: { "Cooking": 1 } },
+	  { name: "Stealthy", cost: -2, skills: { "Lightfooted": 1, "Sneaking": 1 } },
+	  { name: "Brewer", cost: -2, skills: { "Brewing": 2 } },
+	  { name: "Cat's eyes", cost: -2, skills: {} },
+	  { name: "Dextrous", cost: -2, skills: {} },
+	  { name: "Fast reader", cost: -2, skills: {} },
+	  { name: "Outdoorsman", cost: -2, skills: {} },
+	  { name: "Stoner", cost: -2, skills: { "Cultivation": 1 } },
+	  { name: "Viniter", cost: -2, skills: { "Winemaking": 2 } },
+	  { name: "Amateur forager", cost: -3, skills: { "Foraging": 1 } },
+	  { name: "Amateur trapper", cost: -3, skills: { "Trapping": 1 } },
+	  { name: "Iron gut", cost: -3, skills: {} },
+	  { name: "Musical hearing", cost: -3, skills: {} },
+	  { name: "Nimble", cost: -3, skills: { "Nimble": 1 } },
+	  { name: "+1 axe", cost: -4, skills: { "Axe": 1 } },
+	  { name: "+1 long blunt", cost: -4, skills: { "Long Blunt": 1 } },
+	  { name: "+1 maintenance", cost: -4, skills: { "Maintenance": 1 } },
+	  { name: "+1 short blade", cost: -4, skills: { "Short Blade": 1 } },
+	  { name: "+1 spear", cost: -4, skills: { "Spear": 1 } },
+	  { name: "+2 short blunt", cost: -4, skills: { "Short Blunt": 2 } },
+	  { name: "Amateur carpenter", cost: -4, skills: { "Carpentry": 1 } },
+	  { name: "Amateur electrician", cost: -4, skills: { "Electrical": 1 } },
+	  { name: "Amateur gunsmith", cost: -4, skills: { "Gunsmithing": 1 } },
+	  { name: "Amateur metalworker", cost: -4, skills: { "Metalworking": 1 } },
+	  { name: "Amateur mechanic", cost: -5, skills: { "Mechanics": 1 } },
+	  { name: "Angler", cost: -4, skills: { "Fishing": 1 } },
+	  { name: "Baseball player", cost: -4, skills: { "Long Blunt": 1 } },
+	  { name: "Brave", cost: -4, skills: {} },
+	  { name: "Fashionmancer", cost: -4, skills: { "Tailoring": 1 } },
+	  { name: "First Aider", cost: -4, skills: { "First Aid": 1 } },
+	  { name: "Gardener", cost: -4, skills: { "Farming": 1 } },
+	  { name: "Graceful", cost: -4, skills: {} },
+	  { name: "Inconspicuous", cost: -4, skills: {} },
+	  { name: "Light eater", cost: -4, skills: {} },
+	  { name: "Nutritionist", cost: -4, skills: {} },
+	  { name: "Resilient", cost: -4, skills: {} },
+	  { name: "Runner", cost: -4, skills: { "Sprinting": 1 } },
+	  { name: "Sewer", cost: -4, skills: { "Tailoring": 1 } },
+	  { name: "Experienced farmer", cost: -5, skills: { "Farming": 2 } },
+	  { name: "Experienced forager", cost: -5, skills: { "Foraging": 2 } },
+	  { name: "Experienced trapper", cost: -5, skills: { "Trapping": 2 } },
+	  { name: "Gymnast", cost: -5, skills: {} },
+	  { name: "+2 spear", cost: -6, skills: { "Spear": 2 } },
+	  { name: "+2 axe", cost: -6, skills: { "Axe": 2 } },
+	  { name: "+2 long blade", cost: -6, skills: { "Long Blade": 2 } },
+	  { name: "+2 long blunt", cost: -6, skills: { "Long Blunt": 2 } },
+	  { name: "+2 maintenance", cost: -6, skills: { "Maintenance": 2 } },
+	  { name: "+2 short blade", cost: -6, skills: { "Short Blade": 2 } },
+	  { name: "Brawler", cost: -6, skills: { "Axe": 1, "Long Blunt": 1 } },
+	  { name: "Cook", cost: -6, skills: { "Cooking": 2 } },
+	  { name: "EMT certified", cost: -6, skills: { "First Aid": 2 } },
+	  { name: "Eagle eyed", cost: -6, skills: {} },
+	  { name: "Experienced carpenter", cost: -6, skills: { "Carpentry": 2 } },
+	  { name: "Experienced electrician", cost: -6, skills: { "Electrical": 2 } },
+	  { name: "Experienced gunsmith", cost: -6, skills: { "Gunsmithing": 2 } },
+	  { name: "Experienced mechanic", cost: -6, skills: { "Mechanics": 2 } },
+	  { name: "Experienced metalworker", cost: -6, skills: { "Metalworking": 2 } },
+	  { name: "Experienced tailor", cost: -6, skills: { "Tailoring": 2 } },
+	  { name: "Fast healer", cost: -6, skills: {} },
+	  { name: "Fast learner", cost: -6, skills: {} },
+	  { name: "Firearms training", cost: -6, skills: { "Aiming": 1, "Reloading": 1 } },
+	  { name: "Fit", cost: -6, skills: { "Fitness": 2 } },
+	  { name: "Former scout", cost: -6, skills: { "Foraging": 1, "First Aid": 1 } },
+	  { name: "Herbalist", cost: -6, skills: {} },
+	  { name: "Hiker", cost: -6, skills: { "Foraging": 1, "Trapping": 1 } },
+	  { name: "Keen hearing", cost: -6, skills: {} },
+	  { name: "Low thirst", cost: -6, skills: {} },
+	  { name: "Organised", cost: -6, skills: {} },
+	  { name: "Stout", cost: -6, skills: { "Strength": 2 } },
+	  { name: "Adrenaline junkie", cost: -8, skills: {} },
+	  { name: "Handy", cost: -8, skills: { "Carpentry": 1, "Maintenance": 1 } },
+	  { name: "Hunter", cost: -8, skills: { "Aiming": 1, "Short Blade": 1, "Sneaking": 1, "Trapping": 1 } },
+	  { name: "Sprinter", cost: -8, skills: { "Sprinting": 4 } },
+	  { name: "Thick skinned", cost: -8, skills: {} },
+	  { name: "Athletic", cost: -10, skills: { "Fitness": 4 } },
+	  { name: "Strong", cost: -10, skills: { "Strength": 4 } },
+    ];
+
+    const negativeTraits = [
+      { name: "Sunday Driver", cost: 1, skills: {} },
+      { name: "All Thumbs", cost: 2, skills: {} },
+      { name: "Clumsy", cost: 2, skills: {} },
+      { name: "Cowardly", cost: 2, skills: {} },
+      { name: "Short Sighted", cost: 2, skills: {} },
+	  { name: "Slow reader", cost: 2, skills: {} },
+	  { name: "Weak stomach", cost: 3, skills: {} },
+	  { name: "Agoraphobic", cost: 4, skills: {} },
+	  { name: "Claustrophobic", cost: 4, skills: {} },
+	  { name: "Conspicuous", cost: 4, skills: {} },
+	  { name: "Disorganised", cost: 4, skills: {} },
+	  { name: "Hard of hearing", cost: 4, skills: {} },
+	  { name: "Hearty appetite", cost: 4, skills: {} },
+	  { name: "Pacifist", cost: 4, skills: {} },
+	  { name: "Paranoid toker", cost: 4, skills: {} },
+	  { name: "Prone to illness", cost: 4, skills: {} },
+	  { name: "Slacker", cost: 4, skills: {} },
+	  { name: "Smoker", cost: 4, skills: {} },
+	  { name: "Asthmatic", cost: 5, skills: {} },
+	  { name: "Fear of blood", cost: 5, skills: {} },
+	  { name: "Feeble", cost: 6, skills: {"Strength": -2} },
+	  { name: "High thirst", cost: 6, skills: {} },
+	  { name: "Out of shape", cost: 6, skills: {"Fitness": -2} },
+	  { name: "Overweight", cost: 6, skills: {"Fitness": -1} }, 
+	  { name: "Slow healer", cost: 6, skills: {} },
+	  { name: "Slow learner", cost: 6, skills: {} },
+	  { name: "Underweight", cost: 6, skills: {"Fitness": -1} },
+	  { name: "Illiterate", cost: 6, skills: {} },
+	  { name: "Thin-skinned", cost: 8, skills: {} },
+	  { name: "Obese", cost: 10, skills: {"Fitness": -2} },
+	  { name: "Unfit", cost: 10, skills: {"Fitness": -4} },
+	  { name: "Very underweight", cost: 10, skills: {"Fitness": -2} },
+	  { name: "Weak", cost: 10, skills: {"Strength": -5} },
+	  { name: "Deaf", cost: 12, skills: {} },
+
+      // Add more traits here...
+    ];
+
+    let currentPoints = 12;
+    let selectedTraits = [];
+    let currentSkills = { ...baseSkills };
+
+    function updatePointsDisplay() {
+      document.getElementById('pointsDisplay').innerText = `Points Remaining: ${currentPoints}`;
+    }
+
+    function updateSkillsDisplay() {
+      const table = document.getElementById('skillsTable');
+      table.innerHTML = '';
+
+      for (const skill in currentSkills) {
+        const level = currentSkills[skill];
+        const base = baseSkills[skill] || 0;
+        const diff = level - base;
+
+        let xpMultiplier = '+0%';
+        if (level >= 1 && level <= 4) xpMultiplier = '+0%';
+        else if (level === 5 || level === 6) xpMultiplier = '+75%';
+        else if (level === 7 || level === 8) xpMultiplier = '+100%';
+        else if (level >= 9) xpMultiplier = '+125%';
+
+        const tr = document.createElement('tr');
+        tr.className = getSkillCategory(skill);
+        if (diff > 0) tr.classList.add('boosted');
+
+        tr.innerHTML = `
+          <td>${skill}</td>
+          <td>${level}</td>
+          <td>${xpMultiplier}</td>
+        `;
+        table.appendChild(tr);
+      }
+    }
+
+    function getSkillCategory(skill) {
+      const combatSkills = ['Short Blunt', 'Long Blunt', 'Short Blade', 'Long Blade', 'Spear'];
+      const firearmsSkills = ['Aiming', 'Reloading', 'Gunsmithing'];
+      const agilitySkills = ['Sneaking', 'Nimble', 'Lightfooted', 'Sprinting'];
+      const survivalSkills = ['Foraging', 'Trapping', 'Fishing', 'Farming', 'Cultivation', 'Wine Making', 'Brewing'];
+      const craftingSkills = ['Carpentry', 'Metalworking', 'Mechanics', 'Electrical', 'First Aid', 'Tailoring', 'Cooking', 'Maintenance'];
+
+      if (combatSkills.includes(skill)) return 'combat';
+      if (firearmsSkills.includes(skill)) return 'firearms';
+      if (agilitySkills.includes(skill)) return 'agility';
+      if (survivalSkills.includes(skill)) return 'survival';
+      if (craftingSkills.includes(skill)) return 'crafting';
+      return '';
+    }
+
+    function updateBuilder() {
+      const profession = professions[document.getElementById('professionSelect').value];
+      currentPoints = 12 + (profession ? profession.cost : 0);
+      currentSkills = { ...baseSkills };
+
+      if (profession) {
+        for (const skill in profession.skills) {
+          currentSkills[skill] = (currentSkills[skill] || 0) + profession.skills[skill];
+        }
+      }
+
+      selectedTraits.forEach(trait => {
+        if (trait.skills) {
+          for (const skill in trait.skills) {
+            currentSkills[skill] = (currentSkills[skill] || 0) + trait.skills[skill];
+          }
+        }
+        currentPoints += trait.cost;
+      });
+
+      updatePointsDisplay();
+      updateSkillsDisplay();
+    }
+
+    function setupBuilder() {
+      const professionSelect = document.getElementById('professionSelect');
+      for (const name in professions) {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        professionSelect.appendChild(opt);
+      }
+
+      professionSelect.addEventListener('change', updateBuilder);
+
+      const positiveContainer = document.getElementById('positiveTraits');
+      positiveTraits.forEach(trait => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) selectedTraits.push(trait);
+          else selectedTraits = selectedTraits.filter(t => t !== trait);
+          updateBuilder();
+        });
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${trait.name} (${trait.cost})`));
+        positiveContainer.appendChild(label);
+      });
+
+      const negativeContainer = document.getElementById('negativeTraits');
+      negativeTraits.forEach(trait => {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) selectedTraits.push(trait);
+          else selectedTraits = selectedTraits.filter(t => t !== trait);
+          updateBuilder();
+        });
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${trait.name} (+${trait.cost})`));
+        negativeContainer.appendChild(label);
+      });
+
+      updateBuilder();
+    }
+
+    setupBuilder();
+  </script>
+</body>
+</html>
