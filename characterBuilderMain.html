@@ -285,10 +285,10 @@
         const diff = level - base;
 
         let xpMultiplier = '+0%';
-        if (level >= 1 && level <= 4) xpMultiplier = '+0%';
-        else if (level === 5 || level === 6) xpMultiplier = '+75%';
-        else if (level === 7 || level === 8) xpMultiplier = '+100%';
-        else if (level >= 9) xpMultiplier = '+125%';
+        if (level === 1) xpMultiplier = '+75%';
+        else if (level === 2) xpMultiplier = '+100%';
+        else if (level >= 3) xpMultiplier = '+125%';
+        else if (level === 0) xpMultiplier = '+0';
 
         const tr = document.createElement('tr');
         tr.className = getSkillCategory(skill);
